@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 def process_elec_items(df):
     """
@@ -41,9 +42,9 @@ def process_elec_items(df):
                             'unit_id': unit_id,
                             'elec_item': item,
                             'run_id': run_id,
-                            'no': no,
-                            'x': x,
-                            'y': y
+                            'no': int(no),  # no는 정수로 변환
+                            'x': int(x),  # x는 정수로 변환
+                            'y': int(y)  # y는 정수로 변환
                         }
                         results.append(result)
     
@@ -51,9 +52,25 @@ def process_elec_items(df):
     result_df = pd.DataFrame(results)
     return result_df
 
-def save_to_excel(original_file, result_df, sheet_name='Parsed_Results'):
+def save_to_excel(original_file, result_df, sheet_name='RawData', select_option="Summary"):
     """
     결과 데이터프레임을 엑셀 파일의 새로운 시트에 저장
+    select_option이 'Summary'와 'ByLot'일 경우, lot_id별로 시트를 생성
     """
-    with pd.ExcelWriter(original_file, mode='a', engine='openpyxl') as writer:
+    # processed_ 접두어를 붙인 파일명 생성
+    dir_name, base_name = os.path.split(original_file)
+    processed_file = os.path.join(dir_name, f"processed_{base_name}")
+
+    with pd.ExcelWriter(processed_file, mode='w', engine='openpyxl') as writer:
+        # Summary 시트: lot_id, run_id, no 기준으로 중복 제거
+        summary_df = result_df.drop_duplicates(subset=['lot_id', 'run_id', 'no'])
+        summary_df.to_excel(writer, sheet_name='Summary', index=False)
+
+        # RawData 시트: 전체 데이터
         result_df.to_excel(writer, sheet_name=sheet_name, index=False)
+        
+        if select_option == "Summary and ByLot":
+            for lot_id, group_df in result_df.groupby('lot_id'):
+                safe_sheet_name = str(lot_id)[:31]  # 엑셀 시트명은 31자 제한
+                group_df.to_excel(writer, sheet_name=safe_sheet_name, index=False)
+        

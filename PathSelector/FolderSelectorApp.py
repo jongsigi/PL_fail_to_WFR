@@ -21,7 +21,13 @@ class FolderSelectorApp:
         
         # 첫 번째 파일 선택 버튼
         self.file_button_1 = create_button(root, "첫 번째 파일 선택", self.on_select_file_1)
-        
+
+        # 셀렉트 박스(옵션 메뉴) 추가
+        self.option_var = tk.StringVar()
+        self.option_var.set("옵션")  # 기본값
+        self.option_menu = tk.OptionMenu(root, self.option_var, "Summary", "Summary and ByLot")
+        self.option_menu.pack(pady=5)
+
         # 실행 버튼
         self.run_button = create_button(root, "Run", self.run_files)
 
@@ -40,7 +46,8 @@ class FolderSelectorApp:
             print(f"첫 번째 파일: {self.selected_file_path_1}")
             df = excel_to_dataframe(self.selected_file_path_1)
             result_df = process_elec_items(df)
-            save_to_excel(self.selected_file_path_1, result_df, 'Parsed_Results')
+            save_to_excel(self.selected_file_path_1, result_df, 'RawData', select_option=self.option_var.get())
+            print("첫 번째 파일 처리 완료.")
         else:
             print("두 파일이 모두 선택되지 않았습니다.")
             self.label_var.set("두 파일이 모두 선택되지 않았습니다.")
